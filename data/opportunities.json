@@ -1,0 +1,177 @@
+[
+  {
+    "id": "noblereach-2027-02",
+    "programName": "NobleReach Scholars",
+    "sponsor": "NobleReach",
+    "officialUrl": "https://noblereach.smapply.us/prog/february_2027_noblereach_scholars/",
+    "programCycle": "February 2027",
+    "category": "public_interest_cohort",
+    "location": "",
+    "deadline": {
+      "date": "2026-10-14",
+      "time": "23:59",
+      "timezone": "America/New_York"
+    },
+    "funding": {
+      "type": "",
+      "details": "Not stated on program page (compensated placement per user notes; VERIFY amount)"
+    },
+    "eligibilitySummary": "RECENT GRADUATES ONLY: bachelor's/master's/doctoral degree obtained Dec 2023-Dec 2026; min 3.2 GPA from most recent degree; must relocate anywhere in U.S.; U.S. work authorization; some roles need citizenship/clearance eligibility. Page states current undergraduates are NOT accepted.",
+    "materials": [
+      {
+        "id": "resume",
+        "label": "Resume",
+        "kind": "document",
+        "required": true,
+        "done": false
+      },
+      {
+        "id": "unofficial-transcripts",
+        "label": "unofficial transcripts",
+        "kind": "document",
+        "required": true,
+        "done": false
+      },
+      {
+        "id": "1-professional-academic-reference",
+        "label": "1 professional/academic reference",
+        "kind": "other",
+        "required": true,
+        "done": false
+      },
+      {
+        "id": "4-short-answers",
+        "label": "4 short answers",
+        "kind": "essay",
+        "required": true,
+        "done": false
+      }
+    ],
+    "materialsText": "Resume; unofficial transcripts; 1 professional/academic reference; 4 short answers",
+    "travelComponent": "Relocation anywhere in U.S. for placement",
+    "notes": "Deadline confirmed on official page: Oct 14 2026 11:59 PM EDT. Tracks: AI, Business Process Innovation, Computing & Cybersecurity, Materials & Manufacturing. Compensated public-service pathway, not a travel program. ELIGIBILITY FLAG (2026-09-20): current undergrads not accepted, and user graduates May 2028, so likely ineligible this cycle; consider a later cycle after graduating.",
+    "sourceVerified": "official",
+    "status": "researching",
+    "duplicateKey": "noblereach|noblereach scholars|february 2027",
+    "claims": {},
+    "flags": [
+      {
+        "code": "degree_required",
+        "kind": "eligibility",
+        "severity": "block",
+        "message": "Requires an already-completed degree (\"current undergraduates are NOT accepted\"). You are a current undergraduate until 2028-05.",
+        "field": "eligibilitySummary"
+      },
+      {
+        "code": "citizenship_required",
+        "kind": "eligibility",
+        "severity": "info",
+        "message": "Requires U.S. citizenship and/or clearance eligibility (you are a U.S. citizen)."
+      }
+    ],
+    "lastChecked": "2026-09-20",
+    "origin": {
+      "engines": [
+        "manual"
+      ],
+      "addedAt": "2026-09-20T21:34:43.433Z",
+      "via": "seed"
+    },
+    "verification": {
+      "checkedAt": "2026-09-20T00:00:00.000Z",
+      "url": "https://noblereach.smapply.us/prog/february_2027_noblereach_scholars/",
+      "ok": true,
+      "nameFound": true,
+      "deadlineMatch": "exact",
+      "dates": [],
+      "confirmedAt": "2026-09-20T00:00:00.000Z"
+    }
+  },
+  {
+    "id": "umd-education-abroad-scholarship",
+    "programName": "UMD Education Abroad Scholarship",
+    "sponsor": "University of Maryland Education Abroad",
+    "officialUrl": "https://marylandglobal.umd.edu/global-learning-all/study-abroad/affordability/scholarships/umd-education-abroad-scholarship",
+    "programCycle": "Winter/Spring/Spring Break 2027",
+    "category": "study_abroad",
+    "location": "varies by program",
+    "deadline": {
+      "date": "2026-09-30"
+    },
+    "funding": {
+      "type": "scholarship",
+      "details": "$500-$4,000 depending on scholarship (Departmental up to $4,000 semester; Mather up to $4,000 year; First Abroad $1,000-$2,000; others up to $1,500-$2,500)"
+    },
+    "eligibilitySummary": "Current degree-seeking UMD undergrad; most awards need FAFSA; merit awards need ~3.0-3.5+ GPA; First Abroad needs first-gen; some major/program/residency-specific. Gilman Guarantee is Pell-only (n/a).",
+    "materials": [
+      {
+        "id": "active-myea-study-abroad-program-applica",
+        "label": "Active MyEA study abroad program application",
+        "kind": "form",
+        "required": true,
+        "done": false
+      },
+      {
+        "id": "scholarship-universe-form",
+        "label": "Scholarship Universe form",
+        "kind": "form",
+        "required": true,
+        "done": false
+      },
+      {
+        "id": "fafsa-most",
+        "label": "FAFSA (most)",
+        "kind": "form",
+        "required": true,
+        "done": false
+      },
+      {
+        "id": "thank-you-note-before-disbursement",
+        "label": "thank-you note before disbursement",
+        "kind": "other",
+        "required": true,
+        "done": false
+      }
+    ],
+    "materialsText": "Active MyEA study abroad program application; Scholarship Universe form; FAFSA (most); thank-you note before disbursement",
+    "travelComponent": "yes (study abroad)",
+    "notes": "Deadline confirmed on official page: 'The final date to apply for EA scholarships is September 30, 2026' (Winter/Spring/Spring Break 2027, rolling review). Time zone NOT stated. Notification for Sept 16-30 applicants: Oct 13 2026. Requires an active MyEA program application first. Do this by hand this week.",
+    "sourceVerified": "official",
+    "status": "researching",
+    "duplicateKey": "university of maryland education abroad|umd education abroad scholarship|winter spring spring break 2027",
+    "claims": {},
+    "flags": [
+      {
+        "code": "pell_mention",
+        "kind": "eligibility",
+        "severity": "warn",
+        "message": "Mentions a Pell restriction (\"Pell-only\"): check whether it covers the whole program or just one award.",
+        "field": "eligibilitySummary"
+      },
+      {
+        "code": "need_based",
+        "kind": "eligibility",
+        "severity": "warn",
+        "message": "Need-based component (\"FAFSA\"). You are not Pell-eligible; check whether a merit portion exists.",
+        "field": "eligibilitySummary"
+      }
+    ],
+    "lastChecked": "2026-09-20",
+    "origin": {
+      "engines": [
+        "manual"
+      ],
+      "addedAt": "2026-09-20T21:34:43.435Z",
+      "via": "seed"
+    },
+    "verification": {
+      "checkedAt": "2026-09-20T00:00:00.000Z",
+      "url": "https://marylandglobal.umd.edu/global-learning-all/study-abroad/affordability/scholarships/umd-education-abroad-scholarship",
+      "ok": true,
+      "nameFound": true,
+      "deadlineMatch": "exact",
+      "dates": [],
+      "confirmedAt": "2026-09-20T00:00:00.000Z"
+    }
+  }
+]

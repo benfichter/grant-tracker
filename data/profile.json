@@ -1,0 +1,60 @@
+{
+  "summary": "I'm a U.S. citizen, UMD mathematics major graduating May 2028, starting graduate-level coursework at UMD in 2027 while still an undergraduate. 3.9 GPA, University Honors, National Merit Scholar. Research in analytic number theory, combinatorics, and quantum algorithms; NSF-funded MathQuantum fellow. Lockheed Martin software engineering internship. Technical background: embedded systems, Verilog, Python, C++, Kubernetes/Docker/Istio. Led a 45-person STEM nonprofit serving 1,600+ students. I am NOT Pell-eligible: exclude Gilman and any Pell-restricted award. Goal: funded travel, study abroad, research placements, conference travel grants, and selective cohorts (public-interest tech, cybersecurity, AI, quantum, math). Today is 2026-09-20.",
+  "facts": {
+    "citizenship": "US",
+    "pellEligible": false,
+    "standing": "undergraduate",
+    "graduation": "2028-05",
+    "gradCourseworkFrom": "2027",
+    "classNote": "Graduating May 2028, so likely a junior in AY2026-27 and a senior in AY2027-28 (edit if that is wrong)."
+  },
+  "goals": [
+    "Funded travel",
+    "Study abroad",
+    "Research placements",
+    "Conference travel grants",
+    "Selective cohorts: public-interest tech, cybersecurity, AI, quantum, math"
+  ],
+  "snippets": [
+    {
+      "id": "bio",
+      "title": "Who I am",
+      "tags": [
+        "bio"
+      ],
+      "text": "UMD mathematics major graduating May 2028, with a 3.9 GPA, University Honors, and National Merit Scholar."
+    },
+    {
+      "id": "research",
+      "title": "Research",
+      "tags": [
+        "research"
+      ],
+      "text": "Research in analytic number theory, combinatorics, and quantum algorithms; NSF-funded MathQuantum fellow."
+    },
+    {
+      "id": "grad",
+      "title": "Graduate coursework",
+      "tags": [
+        "academics"
+      ],
+      "text": "Starting graduate-level coursework at UMD in 2027 while still an undergraduate."
+    },
+    {
+      "id": "technical",
+      "title": "Technical background",
+      "tags": [
+        "technical"
+      ],
+      "text": "Lockheed Martin software engineering internship. Technical background: embedded systems, Verilog, Python, C++, Kubernetes/Docker/Istio."
+    },
+    {
+      "id": "leadership",
+      "title": "Leadership",
+      "tags": [
+        "leadership"
+      ],
+      "text": "Led a 45-person STEM nonprofit serving 1,600+ students."
+    }
+  ]
+}
