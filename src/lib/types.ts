@@ -1,7 +1,7 @@
 // Shared types. Type-only TypeScript (no enums / namespaces / parameter properties) so Node's
 // native type stripping can load this from the server with no build step.
 
-export type Engine = 'perplexity' | 'chatgpt' | 'claude' | 'manual'
+export type Engine = 'perplexity' | 'chatgpt' | 'claude' | 'gemini' | 'manual'
 export type Verification = 'official' | 'secondary' | 'recurring_estimate' | 'unverified'
 export type Status =
   | 'candidate'
@@ -117,6 +117,8 @@ export interface Opportunity {
   claims: Partial<Record<ClaimField, Claim[]>>
   flags: Flag[]
   lastChecked?: string
+  /** Ids of rows the person has confirmed are NOT duplicates of this one (stops the duplicate check re-flagging them). */
+  notDuplicateOf?: string[]
   verification?: PageVerification
   origin?: { runId?: string; engines: Engine[]; addedAt: string; via: 'seed' | 'run' | 'manual' }
 }

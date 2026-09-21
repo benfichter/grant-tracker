@@ -6,6 +6,7 @@ const ENGINE_NOTE: Record<Exclude<Engine, 'manual'>, string> = {
   perplexity: 'Use Labs / Deep Research mode and open the official pages rather than relying on search snippets.',
   chatgpt: 'Use Deep Research and open the official pages rather than relying on search snippets.',
   claude: 'Use web search / research mode and open the official pages rather than relying on search snippets.',
+  gemini: 'Use Deep Research and open the official pages rather than relying on search snippets.',
 }
 
 export const OUTPUT_SCHEMA = `[

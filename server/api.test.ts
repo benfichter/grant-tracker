@@ -1,6 +1,6 @@
 import test, { after, before } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import type { AddressInfo } from 'node:net'
@@ -79,9 +79,19 @@ test('starting a run generates one prompt per engine that includes the tracked p
   const r = await api<RunRecord>('POST', '/api/searches/public_interest_cohort/runs')
   assert.equal(r.status, 201)
   runId = r.body.id
-  assert.deepEqual(Object.keys(r.body.prompts).sort(), ['chatgpt', 'claude', 'perplexity'])
+  assert.deepEqual(Object.keys(r.body.prompts).sort(), ['chatgpt', 'claude', 'gemini', 'perplexity'])
+  assert.match(r.body.prompts.gemini!, /NobleReach Scholars \(February 2027\)/)
   assert.match(r.body.prompts.claude!, /NobleReach Scholars \(February 2027\)/)
   assert.equal((await api('POST', '/api/searches/nonsense/runs')).status, 404)
+})
+
+test('a run saved before an engine existed gets that engine\'s prompt on read', async () => {
+  const file = path.join(dir, 'runs', `${runId}.json`)
+  const saved = JSON.parse(await readFile(file, 'utf8')) as RunRecord
+  delete saved.prompts.gemini
+  await writeFile(file, JSON.stringify(saved))
+  const r = await api<RunRecord>('GET', `/api/runs/${runId}`)
+  assert.match(r.body.prompts.gemini!, /NobleReach Scholars \(February 2027\)/)
 })
 
 test('pasting three engines merges them, flags the deadline conflict and recognises the tracked program', async () => {
@@ -105,7 +115,7 @@ test('pasting three engines merges them, flags the deadline conflict and recogni
   assert.deepEqual(noble.diffs, [{ field: 'deadline date', tracker: '2026-10-14', incoming: '2026-10-21' }])
 
   assert.equal((await api('POST', `/api/runs/${runId}/paste`, { engine: 'claude', text: '   ' })).status, 400)
-  assert.equal((await api('POST', `/api/runs/${runId}/paste`, { engine: 'gemini', text: 'x' })).status, 400)
+  assert.equal((await api('POST', `/api/runs/${runId}/paste`, { engine: 'bard', text: 'x' })).status, 400)
   const bad = await api<RunRecord>('POST', `/api/runs/${runId}/paste`, { engine: 'chatgpt', text: 'Sorry, nothing found.' })
   assert.equal(bad.body.pastes.chatgpt!.format, 'none')
   await api('POST', `/api/runs/${runId}/paste`, { engine: 'chatgpt', text: chatgpt })
@@ -213,4 +223,37 @@ test('ids cannot escape the data directory', async () => {
   assert.equal((await api('GET', '/api/runs/..%2F..%2Fprofile')).status, 400)
   assert.equal((await api('GET', '/api/drafts/..%2Fx')).status, 400)
   assert.equal((await api('DELETE', '/api/opportunities/does-not-exist')).status, 404)
+})
+
+test('commit re-checks the live tracker: a lead that became a duplicate after its run was reviewed is refused, and add-all adds the rest', async () => {
+  const ZETA = { program_name: 'Zeta Prize Fellowship', sponsor: 'Zeta Foundation', official_url: 'https://pages.test/zeta', program_cycle: 'Summer 2027', deadline_date: '2027-02-01', eligibility_summary: 'Open to current undergraduates.' }
+  const OMEGA = { program_name: 'Omega Robotics Award', sponsor: 'Omega Labs', official_url: 'https://pages.test/omega', program_cycle: 'Fall 2027', deadline_date: '2027-03-15', eligibility_summary: 'Open to current undergraduates.' }
+  const runA = (await api<RunRecord>('POST', '/api/searches/competition/runs')).body
+  const runB = (await api<RunRecord>('POST', '/api/searches/competition/runs')).body
+  const a = (await api<RunRecord>('POST', `/api/runs/${runA.id}/paste`, { engine: 'perplexity', text: fence([ZETA, OMEGA]) })).body
+  const b = (await api<RunRecord>('POST', `/api/runs/${runB.id}/paste`, { engine: 'gemini', text: fence([ZETA]) })).body
+  assert.deepEqual(a.review.map((i) => i.outcome), ['new', 'new'])
+  assert.deepEqual(b.review.map((i) => i.outcome), ['new'])
+  assert.deepEqual(b.review[0]!.engines, ['gemini'])
+
+  const first = await api<{ added: string[]; errors: unknown[] }>('POST', `/api/runs/${runB.id}/commit`, { decisions: [{ key: b.review[0]!.key, action: 'add' }] })
+  assert.equal(first.body.added.length, 1)
+
+  // "Add all" for the first run: Zeta is now already tracked, Omega is genuinely new.
+  const all = await api<{ added: string[]; errors: { key: string; error: string }[]; run: RunRecord }>('POST', `/api/runs/${runA.id}/commit`, {
+    decisions: a.review.map((i) => ({ key: i.key, action: 'add' })),
+  })
+  assert.equal(all.body.added.length, 1)
+  assert.equal(all.body.errors.length, 1)
+  assert.match(all.body.errors[0]!.error, /duplicate of "Zeta Prize Fellowship" \(.*same official page/)
+  assert.equal(Object.keys(all.body.run.decisions).length, 1, 'a refused lead is not recorded as decided')
+
+  const opps = (await api<Opportunity[]>('GET', '/api/opportunities')).body
+  assert.equal(opps.filter((o) => o.programName === 'Zeta Prize Fellowship').length, 1)
+  const omega = opps.find((o) => o.programName === 'Omega Robotics Award')!
+  assert.equal(omega.sourceVerified, 'unverified', 'add-all never makes anything official')
+
+  // "Not a duplicate" is stored on the row so the Verify screen stops re-flagging the pair.
+  const patched = await api<{ opportunity: Opportunity }>('PATCH', `/api/opportunities/${omega.id}`, { notDuplicateOf: ['zeta-prize-fellowship-2027'] })
+  assert.deepEqual(patched.body.opportunity.notDuplicateOf, ['zeta-prize-fellowship-2027'])
 })

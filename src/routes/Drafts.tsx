@@ -18,7 +18,7 @@ export function DraftsHome() {
       <div className="page-head">
         <div>
           <h1>Materials and drafts</h1>
-          <div className="muted">Track what each application needs, draft in Claude or ChatGPT, paste the result back, and get it audited.</div>
+          <div className="muted">Track what each application needs, draft in Claude, ChatGPT or Gemini, paste the result back, and get it audited.</div>
         </div>
       </div>
       {rows.length === 0 ? (
@@ -243,7 +243,7 @@ function Workbench({ opp, material, onPatch }: { opp: Opportunity; material: Mat
       </div>
 
       <h3 style={{ marginTop: 18 }}>2. Draft prompt</h3>
-      <div className="muted small">Tick the snippets the draft may draw on, copy the prompt into Claude or ChatGPT, then paste what comes back in step 3.</div>
+      <div className="muted small">Tick the snippets the draft may draw on, copy the prompt into Claude, ChatGPT or Gemini, then paste what comes back in step 3.</div>
       <div className="row" style={{ margin: '8px 0' }}>
         {profile?.snippets.map((s) => (
           <label className="inline" key={s.id}>
@@ -279,6 +279,7 @@ function Workbench({ opp, material, onPatch }: { opp: Opportunity; material: Mat
               <select value={source} onChange={(e) => setSource(e.target.value as Engine | 'me')}>
                 <option value="claude">Claude</option>
                 <option value="chatgpt">ChatGPT</option>
+                <option value="gemini">Gemini</option>
                 <option value="perplexity">Perplexity</option>
                 <option value="me">Me (edited)</option>
               </select>

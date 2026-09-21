@@ -8,6 +8,7 @@ export const ENGINE_LABEL: Record<Engine, string> = {
   perplexity: 'Perplexity',
   chatgpt: 'ChatGPT',
   claude: 'Claude',
+  gemini: 'Gemini',
   manual: 'Tracker/manual',
 }
 

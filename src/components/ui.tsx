@@ -19,7 +19,7 @@ export function VerifBadge({ v }: { v: Verification }) {
   return <Badge tone={VERIF_TONE[v]}>{v.replace('_', ' ')}</Badge>
 }
 
-const CHIP: Record<Engine, string> = { perplexity: 'P', chatgpt: 'G', claude: 'C', manual: 'M' }
+const CHIP: Record<Engine, string> = { perplexity: 'P', chatgpt: 'G', claude: 'C', gemini: 'Gm', manual: 'M' }
 export function EngineChips({ engines }: { engines: Engine[] }) {
   return (
     <span>

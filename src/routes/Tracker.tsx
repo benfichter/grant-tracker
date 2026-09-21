@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { CategoryId, Effort, FitInputs, Opportunity, Status } from '../lib/types.ts'
 import { CATEGORIES } from '../lib/categories.ts'
+import { verifyList } from '../lib/deadlines.ts'
 import { FIT_LABELS, effectiveFit, fitScore } from '../lib/fit.ts'
 import { api } from '../api.ts'
 import { go, link } from '../router.ts'
@@ -10,7 +11,25 @@ import { VerifyCard } from '../components/VerifyCard.tsx'
 
 const STATUSES: Status[] = ['candidate', 'researching', 'preparing', 'submitted', 'accepted', 'rejected', 'skipped']
 const CAT_LABEL = Object.fromEntries([...CATEGORIES.map((c) => [c.id, c.label]), ['other', 'Other']]) as Record<string, string>
-type SortKey = 'deadline' | 'fit' | 'name' | 'status'
+const VERIF_ORDER = ['unverified', 'recurring_estimate', 'secondary', 'official']
+
+interface SortDef {
+  label: string
+  /** The value to order by; rows where this is undefined always sort last, whichever direction is chosen. */
+  val: (o: Opportunity) => string | number | undefined
+  /** The direction that makes sense first for this column. */
+  first: 'asc' | 'desc'
+}
+const SORTS = {
+  deadline: { label: 'Deadline (soonest first)', val: (o) => o.deadline.date, first: 'asc' },
+  fit: { label: 'Fit score', val: (o) => effectiveFit(o), first: 'desc' },
+  name: { label: 'Name', val: (o) => o.programName.toLowerCase(), first: 'asc' },
+  status: { label: 'Status', val: (o) => STATUSES.indexOf(o.status), first: 'asc' },
+  verification: { label: 'Verification (least verified first)', val: (o) => VERIF_ORDER.indexOf(o.sourceVerified), first: 'asc' },
+  added: { label: 'Date added', val: (o) => o.origin?.addedAt, first: 'desc' },
+  category: { label: 'Category', val: (o) => CAT_LABEL[o.category], first: 'asc' },
+} satisfies Record<string, SortDef>
+type SortKey = keyof typeof SORTS
 
 // ---------------------------------------------------------------- list
 
@@ -21,7 +40,19 @@ export function TrackerList() {
   const [cat, setCat] = useState('')
   const [ver, setVer] = useState('')
   const [sort, setSort] = useState<SortKey>('deadline')
+  const [dir, setDir] = useState<'asc' | 'desc'>('asc')
+  const [view, setView] = useState<'all' | 'verify'>('all')
   const [adding, setAdding] = useState(false)
+
+  const needVerify = useMemo(() => new Set(verifyList(opps).map((r) => r.opp.id)), [opps])
+  const pickSort = (k: SortKey) => {
+    // Clicking the active column flips its direction; a different one starts in its natural direction.
+    if (k === sort) setDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    else {
+      setSort(k)
+      setDir(SORTS[k].first)
+    }
+  }
 
   const rows = useMemo(() => {
     const closed = new Set(['submitted', 'accepted', 'rejected', 'skipped'])
@@ -29,21 +60,24 @@ export function TrackerList() {
       if (status === 'active' ? closed.has(o.status) : status && o.status !== status) return false
       if (cat && o.category !== cat) return false
       if (ver && o.sourceVerified !== ver) return false
+      if (view === 'verify' && !needVerify.has(o.id)) return false
       if (q && !`${o.programName} ${o.sponsor} ${o.notes}`.toLowerCase().includes(q.toLowerCase())) return false
       return true
     })
-    const key: Record<SortKey, (a: Opportunity, b: Opportunity) => number> = {
-      deadline: (a, b) => (a.deadline.date ?? '9999').localeCompare(b.deadline.date ?? '9999'),
-      fit: (a, b) => (effectiveFit(b) ?? -1) - (effectiveFit(a) ?? -1),
-      name: (a, b) => a.programName.localeCompare(b.programName),
-      status: (a, b) => STATUSES.indexOf(a.status) - STATUSES.indexOf(b.status),
-    }
-    return [...list].sort(key[sort])
-  }, [opps, q, status, cat, ver, sort])
+    const sign = dir === 'asc' ? 1 : -1
+    const val = SORTS[sort].val
+    return [...list].sort((a, b) => {
+      const x = val(a)
+      const y = val(b)
+      if (x === undefined || y === undefined) return x === y ? 0 : x === undefined ? 1 : -1
+      const c = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y))
+      return sign * c || a.programName.localeCompare(b.programName)
+    })
+  }, [opps, q, status, cat, ver, sort, dir, view, needVerify])
 
   const th = (label: string, k: SortKey) => (
-    <th className="sortable" onClick={() => setSort(k)}>
-      {label} {sort === k ? '▾' : ''}
+    <th className="sortable" onClick={() => pickSort(k)}>
+      {label} {sort === k ? (dir === 'asc' ? '▴' : '▾') : ''}
     </th>
   )
 
@@ -59,6 +93,18 @@ export function TrackerList() {
         </button>
       </div>
       {adding && <AddByHand onDone={() => setAdding(false)} />}
+
+      <div className="row" style={{ marginBottom: 10 }}>
+        <button className={`btn ${view === 'all' ? 'primary' : ''}`} onClick={() => setView('all')}>
+          All rows
+        </button>
+        <button className={`btn ${view === 'verify' ? 'primary' : ''}`} onClick={() => setView('verify')}>
+          Needs verification ({needVerify.size})
+        </button>
+        <a className="small" href={link('verify')}>
+          Open the Verify queue
+        </a>
+      </div>
 
       <div className="card flat">
         <div className="fields">
@@ -86,6 +132,20 @@ export function TrackerList() {
               ))}
             </select>
           </Field>
+          <Field label="Sort by">
+            <span className="row">
+              <select value={sort} onChange={(e) => pickSort(e.target.value as SortKey)}>
+                {(Object.keys(SORTS) as SortKey[]).map((k) => (
+                  <option key={k} value={k}>
+                    {SORTS[k].label}
+                  </option>
+                ))}
+              </select>
+              <button className="btn small" title="Reverse the order" onClick={() => setDir((d) => (d === 'asc' ? 'desc' : 'asc'))}>
+                {dir === 'asc' ? '▴ asc' : '▾ desc'}
+              </button>
+            </span>
+          </Field>
           <Field label="Verification">
             <select value={ver} onChange={(e) => setVer(e.target.value)}>
               <option value="">All</option>
@@ -107,10 +167,10 @@ export function TrackerList() {
             <thead>
               <tr>
                 {th('Program', 'name')}
-                <th>Category</th>
+                {th('Category', 'category')}
                 {th('Deadline', 'deadline')}
                 {th('Fit', 'fit')}
-                <th>Source</th>
+                {th('Source', 'verification')}
                 {th('Status', 'status')}
               </tr>
             </thead>

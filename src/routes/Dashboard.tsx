@@ -71,7 +71,7 @@ export function Dashboard() {
         <div className="card">
           <div className="muted small">Engine conflicts</div>
           <div className="stat">{conflicts.length}</div>
-          <div className="small">Perplexity / ChatGPT / Claude disagree</div>
+          <div className="small">Search engines disagree</div>
         </div>
         <div className="card">
           <div className="muted small">Eligibility blockers</div>

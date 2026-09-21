@@ -67,6 +67,10 @@ test('cleanValue removes ChatGPT cite tokens and bold markers', () => {
   assert.equal(cleanValue('**Big** dealciteturn0search1 here 【4†source】 [2, 3]'), 'Big deal here')
 })
 
+test('cleanValue removes Gemini cite markers', () => {
+  assert.equal(cleanValue('[cite_start]Apply by Jan 15 [cite: 1, 2] for **all** majors [cite: 3]'), 'Apply by Jan 15 for all majors')
+})
+
 // ---------- dedupe ----------
 
 test('classify: exact URL, key, fuzzy title, same host different cycle, and new', () => {

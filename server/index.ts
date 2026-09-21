@@ -8,6 +8,7 @@ import { parsePaste } from '../src/lib/parse.ts'
 import { buildReview } from '../src/lib/review.ts'
 import { attachClaims, finalizeDraft, materialsFromText } from '../src/lib/merge.ts'
 import { classify, makeRef } from '../src/lib/dedupe.ts'
+import { bestDuplicateOf } from '../src/lib/duplicates.ts'
 import { refreshFlags } from '../src/lib/flags.ts'
 import { buildDiscoveryPrompt } from '../src/lib/prompts.ts'
 import { buildIcs } from '../src/lib/deadlines.ts'
@@ -18,7 +19,7 @@ import { DATA_DIR, HttpError, listJson, readJson, safeId, update, writeJson } fr
 import { checkPage } from './verify.ts'
 import { seed } from './seed.ts'
 
-const ENGINES = ['perplexity', 'chatgpt', 'claude'] as const
+const ENGINES = ['perplexity', 'chatgpt', 'claude', 'gemini'] as const
 type RunEngine = (typeof ENGINES)[number]
 const isRunEngine = (e: unknown): e is RunEngine => (ENGINES as readonly unknown[]).includes(e)
 
@@ -47,7 +48,7 @@ async function getRun(id: string): Promise<RunRecord> {
 // ---------- opportunity patching (shared by PATCH, manual add and run commit) ----------
 
 const TEXT_PATCH = ['programName', 'sponsor', 'officialUrl', 'programCycle', 'location', 'eligibilitySummary', 'materialsText', 'travelComponent', 'notes'] as const
-const PLAIN_PATCH = ['category', 'materials', 'fit', 'fitOverride', 'effort', 'status', 'flags'] as const
+const PLAIN_PATCH = ['category', 'materials', 'fit', 'fitOverride', 'effort', 'status', 'flags', 'notDuplicateOf'] as const
 const VERIFICATIONS = ['secondary', 'recurring_estimate', 'unverified']
 
 export function applyPatch(o: Opportunity, patch: Record<string, unknown>, profile: Profile, today: string): { opp: Opportunity; warnings: string[] } {
@@ -268,12 +269,23 @@ export function createApp() {
     res.status(201).json(run)
   }))
 
-  app.get('/api/runs/:id', h(async (req, res) => void res.json(await getRun(param(req, 'id')))))
+  app.get('/api/runs/:id', h(async (req, res) => {
+    const run = await getRun(param(req, 'id'))
+    // Runs saved before an engine was added have no prompt for it; build one on read (not persisted).
+    const missing = ENGINES.filter((engine) => !run.prompts[engine])
+    const cat = categoryById(run.categoryId)
+    if (missing.length && cat) {
+      const [profile, opportunities] = await Promise.all([getProfile(), getOpps()])
+      const today = todayIso()
+      for (const engine of missing) run.prompts[engine] = buildDiscoveryPrompt({ category: cat, profile, opportunities, engine, today })
+    }
+    res.json(run)
+  }))
 
   app.post('/api/runs/:id/paste', h(async (req, res) => {
     const id = param(req, 'id')
     const { engine, text } = req.body as { engine?: string; text?: string }
-    if (!isRunEngine(engine)) throw new HttpError(400, 'engine must be perplexity, chatgpt or claude.')
+    if (!isRunEngine(engine)) throw new HttpError(400, `engine must be one of: ${ENGINES.join(', ')}.`)
     if (typeof text !== 'string' || !text.trim()) throw new HttpError(400, 'Paste some text first.')
     const [profile, opps] = await Promise.all([getProfile(), getOpps()])
     const out = await update<RunRecord | null, RunRecord>(`runs/${id}.json`, null, (run) => {
@@ -324,6 +336,14 @@ export function createApp() {
         if (d.action === 'add') {
           if (item.outcome === 'duplicate') { errors.push({ key: d.key, error: `Already tracked as "${item.match?.programName}". Attach the new claims instead.` }); continue }
           const { opp } = applyPatch(item.draft, { ...(d.edits ?? {}), status: 'researching' }, profile, todayIso())
+          // The review was built when the paste arrived; the tracker may have changed since (another run, an earlier
+          // row in this same batch). Re-check against the live list. A lead already flagged "possible duplicate" was
+          // put in front of the person on purpose, so only the other outcomes are refused here.
+          const dup = item.outcome === 'review' ? undefined : bestDuplicateOf(opp, list)
+          if (dup?.level === 'likely') {
+            errors.push({ key: d.key, error: `Not added: looks like a duplicate of "${dup.row.programName}" (${dup.signals.filter((s) => s.weight > 0).map((s) => s.label).join(', ')}).` })
+            continue
+          }
           const final = finalizeDraft({ ...opp, id: '' }, new Set(list.map((o) => o.id)))
           list = [...list, final]
           added.push(final.id)
@@ -364,7 +384,7 @@ export function createApp() {
     const [oppId, materialId] = [param(req, 'oppId'), param(req, 'materialId')]
     const { text, source, note } = req.body as { text?: string; source?: string; note?: string }
     if (typeof text !== 'string' || !text.trim()) throw new HttpError(400, 'Draft text is empty.')
-    const src = (['perplexity', 'chatgpt', 'claude', 'me'] as const).find((s) => s === source) ?? 'me'
+    const src = ([...ENGINES, 'me'] as const).find((s) => s === source) ?? 'me'
     const [profile, opps] = await Promise.all([getProfile(), getOpps()])
     const opp = opps.find((o) => o.id === oppId)
     const material = opp?.materials.find((m) => m.id === materialId)

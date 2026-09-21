@@ -14,6 +14,7 @@ const ENGINES: { id: Exclude<Engine, 'manual'>; url: string; hint: string }[] = 
   { id: 'perplexity', url: 'https://www.perplexity.ai/', hint: 'Use Labs or Research mode.' },
   { id: 'chatgpt', url: 'https://chatgpt.com/', hint: 'Use Deep Research.' },
   { id: 'claude', url: 'https://claude.ai/', hint: 'Turn on web search / research.' },
+  { id: 'gemini', url: 'https://gemini.google.com/app', hint: 'Use Deep Research.' },
 ]
 
 // ---------------------------------------------------------------- home
@@ -68,7 +69,7 @@ export function SearchHome() {
                     <div key={r.id} className="row between small">
                       <a href={link('search', r.id)}>{r.createdAt.slice(0, 16).replace('T', ' ')}</a>
                       <span className="muted">
-                        {r.engines.length}/3 engines, {r.items} leads, {r.decided} decided
+                        {r.engines.length}/{ENGINES.length} engines, {r.items} leads, {r.decided} decided
                       </span>
                     </div>
                   ))}
@@ -130,8 +131,25 @@ export function RunView({ runId }: { runId: string }) {
     [runId, reload, toast],
   )
 
+  const addAll = async (items: ReviewItem[]) => {
+    setBusy('all')
+    try {
+      const r = await api.commit(runId, items.map((it) => ({ key: it.key, action: 'add' as const })))
+      setRun(r.run)
+      await reload()
+      const added = `Added ${r.added.length} to the tracker as unverified. Find them in the Verify tab.`
+      if (r.errors.length) toast(`${added} ${r.errors.length} not added: ${r.errors.map((e) => e.error).join(' ')}`)
+      else toast(added, 'ok')
+    } catch (e) {
+      toast((e as Error).message)
+    } finally {
+      setBusy(null)
+    }
+  }
+
   if (!run) return <div className="empty">Loading...</div>
   const cat = categoryById(run.categoryId)
+  const addable = run.review.filter((i) => i.outcome === 'new' && !run.decisions[i.key])
   const pasted = Object.keys(run.pastes) as Engine[]
   const groups: { outcome: ReviewItem['outcome']; title: string; note: string; open: boolean }[] = [
     { outcome: 'new', title: 'New leads', note: 'Not in your tracker and no rule blocks them.', open: true },
@@ -219,6 +237,14 @@ export function RunView({ runId }: { runId: string }) {
             {run.review.length} distinct program{run.review.length === 1 ? '' : 's'} from {pasted.length} engine{pasted.length === 1 ? '' : 's'}
             {run.invalidRows > 0 ? `, ${run.invalidRows} row${run.invalidRows === 1 ? '' : 's'} dropped for having no program name` : ''}.
             Nothing here changes your tracker until you press a button, and nothing becomes official until you verify it.
+          </div>
+          <div className="card flat row between" style={{ marginBottom: 12 }}>
+            <span className="small">
+              <strong>{addable.length}</strong> new lead{addable.length === 1 ? '' : 's'} not yet decided. Possible duplicates, already-tracked and auto-excluded leads are left for you to decide one by one.
+            </span>
+            <button className="btn primary" disabled={busy !== null || addable.length === 0} onClick={() => addAll(addable)}>
+              {busy === 'all' ? 'Adding...' : `Add all ${addable.length} new to tracker`}
+            </button>
           </div>
           {groups.map((g) => {
             const items = run.review.filter((i) => i.outcome === g.outcome)

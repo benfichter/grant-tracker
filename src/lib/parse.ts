@@ -10,11 +10,12 @@ export interface ParseResult {
 
 // ---------- citation / markup cleanup ----------
 
-/** Strip engine citation markers ([1], 【…】, ChatGPT's private-use cite tokens) and bold markers. */
+/** Strip engine citation markers ([1], 【…】, ChatGPT's private-use cite tokens, Gemini's [cite: 1]) and bold markers. */
 export function cleanValue(v: string): string {
   return v
     .replace(/[^]*/g, '')
     .replace(/【[^】]*】/g, '')
+    .replace(/\s*\[cite(?:_start|:[^\]]*)\]/gi, '')
     .replace(/\s*\[\d+(?:\s*,\s*\d+)*\]/g, '')
     .replace(/\*\*/g, '')
     .replace(/\s+/g, ' ')

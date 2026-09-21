@@ -1,6 +1,6 @@
 # Application tracker
 
-A local React app that runs the opportunity-hunting loop. You run the searches in Perplexity, ChatGPT and Claude by hand;
+A local React app that runs the opportunity-hunting loop. You run the searches in Perplexity, ChatGPT, Claude and Gemini by hand;
 the app tells you what to search, takes the answers back, validates them, tracks the results and helps with drafts.
 No API keys, no paid services, nothing is submitted for you.
 
@@ -18,15 +18,30 @@ The first start seeds `data/` from `tracker.csv` and `profile/profile.md`. After
 
 1. **Search tab**: pick one category, press **New run**. The app builds a prompt for each engine from your profile, the
    category, and the programs you already track.
-2. Copy each prompt into its engine (Perplexity Labs, ChatGPT Deep Research, Claude with web search) and paste each answer
+2. Copy each prompt into its engine (Perplexity Labs, ChatGPT Deep Research, Claude with web search, Gemini Deep Research) and paste each answer
    back. The prompt asks for a JSON array; markdown tables and CSV also parse.
-3. **Review**. The app merges the three answers, shows where the engines disagree (with who said what), applies your
+3. **Review**. The app merges the answers, shows where the engines disagree (with who said what), applies your
    eligibility rules, and sorts each lead: new, possible duplicate, already tracked, or auto-excluded. Add, attach to an
-   existing row, or skip. Nothing changes until you press a button.
-4. **Verify tab**: for each new row press **Check page** (the server fetches the official page and reports the name and any
+   existing row, or skip. Nothing changes until you press a button. **Add all N new to tracker** adds every undecided
+   "new" lead in one go (as `unverified`); possible duplicates, already-tracked and auto-excluded leads stay for you to decide.
+4. **Verify tab**: first a **Possible duplicates** section (see below), then the rows still to verify. For each new row press **Check page** (the server fetches the official page and reports the name and any
    dates it finds), then confirm by hand. That confirmation is the only way a row becomes `official`.
 5. **Dashboard**: deadlines by urgency, plus the `.ics` calendar (28/21/14/7/3/1-day reminders) for official rows.
 6. **Drafts tab**: track materials per application, copy a draft prompt, paste the draft back, and get it audited.
+
+## Duplicate protection
+
+Three layers, each independent of the others:
+
+1. **On paste** (`src/lib/dedupe.ts`): leads are merged across engines, then matched against the tracker by normalized URL,
+   sponsor+program+cycle, and title similarity. Exact matches can't be added, close ones are put in front of you.
+2. **On commit** (`bestDuplicateOf` in `src/lib/duplicates.ts`): every add is re-scored against the *live* tracker, including
+   rows added earlier in the same batch, so a lead that became a duplicate after its run was reviewed (or two runs adding the
+   same program) is refused with the reason.
+3. **Verify tab, Possible duplicates** (`findDuplicatePairs`): scores every pair of active rows on several data points together
+   (same page, name identical / near-identical / one inside the other, sponsor, cycle year, deadline date, funding amount,
+   location) and shows the evidence. A pair scoring 0.7+ is "likely", 0.5+ "possible". **Not a duplicate** is remembered on the
+   row; **mark skipped** closes the extra row (nothing is deleted).
 
 ## Rules the app enforces
 
